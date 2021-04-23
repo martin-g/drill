@@ -56,13 +56,13 @@ import java.util.stream.Stream;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-  TestMongoFilterPushDown.class,
-  TestMongoProjectPushDown.class,
-  TestMongoQueries.class,
-  TestMongoLimitPushDown.class,
-  TestMongoChunkAssignment.class,
-  TestMongoStoragePluginUsesCredentialsStore.class,
-  TestMongoDrillIssue.class
+        TestMongoFilterPushDown.class,
+        TestMongoProjectPushDown.class,
+        TestMongoQueries.class,
+        TestMongoLimitPushDown.class,
+        TestMongoChunkAssignment.class,
+        TestMongoStoragePluginUsesCredentialsStore.class,
+        TestMongoDrillIssue.class
 })
 
 @Category({SlowTest.class, MongoStorageTest.class})
@@ -102,33 +102,33 @@ public class MongoTestSuite extends BaseTest implements MongoTestConstants {
       Network network = Network.newNetwork();
 
       mongoContainers = Stream.of("m1", "m2", "m3")
-          .map(host -> new GenericContainer<>("mongo:4.4.5")
-              .withNetwork(network)
-              .withNetworkAliases(host)
-              .withExposedPorts(MONGOS_PORT)
-              .withCommand(String.format("mongod --port %d --shardsvr --replSet rs0 --bind_ip localhost,%s", MONGOS_PORT, host)))
-          .collect(Collectors.toList());
+              .map(host -> new GenericContainer<>("mongo:4.4.5")
+                      .withNetwork(network)
+                      .withNetworkAliases(host)
+                      .withExposedPorts(MONGOS_PORT)
+                      .withCommand(String.format("mongod --port %d --shardsvr --replSet rs0 --bind_ip localhost,%s", MONGOS_PORT, host)))
+              .collect(Collectors.toList());
 
       String configServerHost = "m4";
       GenericContainer<?> configServer = new GenericContainer<>("mongo:4.4.5")
-          .withNetwork(network)
-          .withNetworkAliases(configServerHost)
-          .withExposedPorts(MONGOS_PORT)
-          .withCommand(String.format("mongod --configsvr --port %s --replSet rs0conf --bind_ip localhost,%s", MONGOS_PORT, configServerHost));
+              .withNetwork(network)
+              .withNetworkAliases(configServerHost)
+              .withExposedPorts(MONGOS_PORT)
+              .withCommand(String.format("mongod --configsvr --port %s --replSet rs0conf --bind_ip localhost,%s", MONGOS_PORT, configServerHost));
 
       configServer.start();
 
       Container.ExecResult execResult = configServer.execInContainer("/bin/bash", "-c",
-          String.format("echo 'rs.initiate({_id: \"rs0conf\",configsvr: true, members: [{ _id : 0, host : \"%s:%2$s\" }]})' | mongo --port %2$s", configServerHost, MONGOS_PORT));
+              String.format("echo 'rs.initiate({_id: \"rs0conf\",configsvr: true, members: [{ _id : 0, host : \"%s:%2$s\" }]})' | mongo --port %2$s", configServerHost, MONGOS_PORT));
 
       logger.info(execResult.toString());
 
       String mongosHost = "m5";
       GenericContainer<?> mongos = new GenericContainer<>("mongo:4.4.5")
-          .withNetwork(network)
-          .withNetworkAliases(mongosHost)
-          .withExposedPorts(MONGOS_PORT)
-          .withCommand(String.format("mongos --configdb rs0conf/%1$s:%2$s --bind_ip localhost,%3$s --port %2$s", configServerHost, MONGOS_PORT, mongosHost));
+              .withNetwork(network)
+              .withNetworkAliases(mongosHost)
+              .withExposedPorts(MONGOS_PORT)
+              .withCommand(String.format("mongos --configdb rs0conf/%1$s:%2$s --bind_ip localhost,%3$s --port %2$s", configServerHost, MONGOS_PORT, mongosHost));
 
       mongos.start();
 
@@ -137,12 +137,12 @@ public class MongoTestSuite extends BaseTest implements MongoTestConstants {
       GenericContainer<?> master = getMasterContainer();
 
       execResult = master.execInContainer("/bin/bash", "-c",
-          String.format("mongo --port %1$s --eval 'printjson(rs.initiate({_id:\"rs0\"," +
-              "members:[{_id:0,host:\"m1:%1$s\"},{_id:1,host:\"m2:%1$s\"},{_id:2,host:\"m3:%1$s\"}]}))' --quiet", MONGOS_PORT));
+              String.format("mongo --port %1$s --eval 'printjson(rs.initiate({_id:\"rs0\"," +
+                      "members:[{_id:0,host:\"m1:%1$s\"},{_id:1,host:\"m2:%1$s\"},{_id:2,host:\"m3:%1$s\"}]}))' --quiet", MONGOS_PORT));
       logger.info(execResult.toString());
 
       execResult = master.execInContainer("/bin/bash", "-c",
-          String.format("until mongo --port %s --eval \"printjson(rs.isMaster())\" | grep ismaster | grep true > /dev/null 2>&1;do sleep 1;done", MONGOS_PORT));
+              String.format("until mongo --port %s --eval \"printjson(rs.isMaster())\" | grep ismaster | grep true > /dev/null 2>&1;do sleep 1;done", MONGOS_PORT));
       logger.info(execResult.toString());
 
       execResult = mongos.execInContainer("/bin/bash", "-c", "echo 'sh.addShard(\"rs0/m1\")' | mongo --port " + MONGOS_PORT);
@@ -159,8 +159,8 @@ public class MongoTestSuite extends BaseTest implements MongoTestConstants {
       // Enabled sharding at database level
       logger.info("Enabled sharding at database level");
       execResult = mongos.execInContainer("/bin/bash", "-c", String.format("mongo --eval 'db.adminCommand( {\n" +
-          "   enableSharding: \"%s\"\n" +
-          "} )'", EMPLOYEE_DB));
+              "   enableSharding: \"%s\"\n" +
+              "} )'", EMPLOYEE_DB));
       logger.info(execResult.toString());
 
       // Create index in sharded collection
@@ -171,7 +171,7 @@ public class MongoTestSuite extends BaseTest implements MongoTestConstants {
       // Shard the collection
       logger.info("Shard the collection: {}.{}", EMPLOYEE_DB, EMPINFO_COLLECTION);
       execResult = mongos.execInContainer("/bin/bash", "-c", String.format(
-          "echo 'sh.shardCollection(\"%s.%s\", {\"employee_id\" : 1})' | mongo ", EMPLOYEE_DB, EMPINFO_COLLECTION));
+              "echo 'sh.shardCollection(\"%s.%s\", {\"employee_id\" : 1})' | mongo ", EMPLOYEE_DB, EMPINFO_COLLECTION));
       logger.info(execResult.toString());
       createMongoUser();
       createDbAndCollections(DONUTS_DB, DONUTS_COLLECTION, "id");
@@ -188,22 +188,22 @@ public class MongoTestSuite extends BaseTest implements MongoTestConstants {
     @Override
     public String setup() throws IOException {
       mongoContainers = Collections.singletonList(new GenericContainer<>("mongo:4.4.5")
-          .withNetwork(Network.SHARED)
-          .withNetworkAliases("M1")
-          .withExposedPorts(MONGOS_PORT)
-          .withCommand("--replSet rs0 --bind_ip localhost,M1"));
+              .withNetwork(Network.SHARED)
+              .withNetworkAliases("M1")
+              .withExposedPorts(MONGOS_PORT)
+              .withCommand("--replSet rs0 --bind_ip localhost,M1"));
 
       mongoContainers.forEach(GenericContainer::start);
       GenericContainer<?> master = getMasterContainer();
 
       try {
         master.execInContainer("/bin/bash", "-c",
-            "mongo --eval 'printjson(rs.initiate({_id:\"rs0\","
-                + "members:[{_id:0,host:\"M1:27017\"}]}))' "
-                + "--quiet");
+                "mongo --eval 'printjson(rs.initiate({_id:\"rs0\","
+                        + "members:[{_id:0,host:\"M1:27017\"}]}))' "
+                        + "--quiet");
         master.execInContainer("/bin/bash", "-c",
-            "until mongo --eval \"printjson(rs.isMaster())\" | grep ismaster | grep true > /dev/null 2>&1;"
-                + "do sleep 1;done");
+                "until mongo --eval \"printjson(rs.isMaster())\" | grep ismaster | grep true > /dev/null 2>&1;"
+                        + "do sleep 1;done");
       } catch (Exception e) {
         throw new IllegalStateException("Failed to initiate rs.", e);
       }
@@ -249,7 +249,7 @@ public class MongoTestSuite extends BaseTest implements MongoTestConstants {
   }
 
   private static void createDbAndCollections(String dbName,
-      String collectionName, String indexFieldName) {
+                                             String collectionName, String indexFieldName) {
     MongoDatabase db = mongoClient.getDatabase(dbName);
     MongoCollection<Document> mongoCollection = db.getCollection(collectionName);
     if (mongoCollection == null) {
@@ -277,11 +277,11 @@ public class MongoTestSuite extends BaseTest implements MongoTestConstants {
       String password = URLEncoder.encode(new String(passwordChars), "UTF-8");
 
       BasicDBObject createUserCommand = new BasicDBObject("createUser", username)
-          .append("pwd", password)
-          .append("roles",
-              Collections.singletonList(
-                  new BasicDBObject("role", "readWrite")
-                      .append("db", AUTHENTICATION_DB)));
+              .append("pwd", password)
+              .append("roles",
+                      Collections.singletonList(
+                              new BasicDBObject("role", "readWrite")
+                                      .append("db", AUTHENTICATION_DB)));
 
       MongoDatabase db = mongoClient.getDatabase(AUTHENTICATION_DB);
       db.runCommand(createUserCommand);
