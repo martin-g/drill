@@ -27,12 +27,12 @@ import java.io.IOException;
 public class TestTableGenerator implements MongoTestConstants {
 
   private static final Logger logger = LoggerFactory
-      .getLogger(TestTableGenerator.class);
+          .getLogger(TestTableGenerator.class);
 
   public static void importData(GenericContainer<?> mongo, String dbName, String collectionName,
                                 String fileName) throws InterruptedException, IOException {
     Container.ExecResult execResult = mongo.execInContainer("/bin/bash", "-c",
-        "mongoimport --db " + dbName + " --collection " + collectionName + " --jsonArray --upsert --file " + fileName);
+            "mongoimport --db " + dbName + " --collection " + collectionName + " --jsonArray --upsert --file " + fileName);
     logger.info(execResult.toString());
 
     logger.info("Imported file {} into collection {} ", fileName, collectionName);
