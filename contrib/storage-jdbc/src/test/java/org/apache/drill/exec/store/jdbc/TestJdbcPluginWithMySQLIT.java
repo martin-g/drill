@@ -32,7 +32,10 @@ import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.ext.ScriptUtils;
+import org.testcontainers.jdbc.JdbcDatabaseDelegate;
 import org.testcontainers.utility.DockerImageName;
 
 import java.math.BigDecimal;
@@ -46,7 +49,7 @@ import static org.junit.Assert.assertEquals;
 @Category(JdbcStorageTest.class)
 public class TestJdbcPluginWithMySQLIT extends ClusterTest {
 
-  public static MySQLContainer<?> mySQLContainer;
+  public static JdbcDatabaseContainer<?> jdbcContainer;
 
   @BeforeClass
   public static void initMysql() throws Exception {
@@ -61,7 +64,7 @@ public class TestJdbcPluginWithMySQLIT extends ClusterTest {
       imageName = DockerImageName.parse("mysql:5.7.27");
     }
 
-    mySQLContainer = new MySQLContainer<>(imageName)
+    jdbcContainer = new MySQLContainer<>(imageName)
             .withExposedPorts(3306)
             .withConfigurationOverride("mysql_config_override")
             .withUsername("mysqlUser")
@@ -70,15 +73,16 @@ public class TestJdbcPluginWithMySQLIT extends ClusterTest {
             .withUrlParam("serverTimezone", "UTC")
             .withUrlParam("useJDBCCompliantTimezoneShift", "true")
             .withInitScript("mysql-test-data.sql");
-    mySQLContainer.start();
+    jdbcContainer.start();
 
     if (osName.startsWith("linux")) {
-//      schemaConfig.withScripts(ScriptResolver.classPathScript("mysql-test-data-linux.sql"));
+      JdbcDatabaseDelegate databaseDelegate = new JdbcDatabaseDelegate(jdbcContainer, "");
+      ScriptUtils.runInitScript(databaseDelegate, "mysql-test-data-linux.sql");
     }
 
-    String jdbcUrl = mySQLContainer.getJdbcUrl();
+    String jdbcUrl = jdbcContainer.getJdbcUrl();
     JdbcStorageConfig jdbcStorageConfig = new JdbcStorageConfig("com.mysql.cj.jdbc.Driver", jdbcUrl,
-            mySQLContainer.getUsername(), mySQLContainer.getPassword(), false, null, null);
+            jdbcContainer.getUsername(), jdbcContainer.getPassword(), false, null, null);
     jdbcStorageConfig.setEnabled(true);
 
     cluster.defineStoragePlugin("mysql", jdbcStorageConfig);
@@ -86,7 +90,7 @@ public class TestJdbcPluginWithMySQLIT extends ClusterTest {
     if (osName.startsWith("linux")) {
       // adds storage plugin with case insensitive table names
       JdbcStorageConfig jdbcCaseSensitiveStorageConfig = new JdbcStorageConfig("com.mysql.cj.jdbc.Driver", jdbcUrl,
-              mySQLContainer.getUsername(), mySQLContainer.getPassword(), true, null, null);
+              jdbcContainer.getUsername(), jdbcContainer.getPassword(), true, null, null);
       jdbcCaseSensitiveStorageConfig.setEnabled(true);
       cluster.defineStoragePlugin("mysqlCaseInsensitive", jdbcCaseSensitiveStorageConfig);
     }
@@ -94,8 +98,8 @@ public class TestJdbcPluginWithMySQLIT extends ClusterTest {
 
   @AfterClass
   public static void stopMysql() {
-    if (mySQLContainer != null) {
-      mySQLContainer.stop();
+    if (jdbcContainer != null) {
+      jdbcContainer.stop();
     }
   }
 
