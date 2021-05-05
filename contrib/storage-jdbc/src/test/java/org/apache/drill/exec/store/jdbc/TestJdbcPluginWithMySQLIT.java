@@ -54,14 +54,14 @@ public class TestJdbcPluginWithMySQLIT extends ClusterTest {
     String osName = System.getProperty("os.name").toLowerCase();
     String mysqlDBName = "drill_mysql_test";
 
-    String imageName;
+    DockerImageName imageName;
     if (osName.startsWith("linux") && "aarch64".equals(System.getProperty("os.arch"))) {
-      imageName = "mariadb:10.6.0";
+      imageName = DockerImageName.parse("mariadb:10.6.0").asCompatibleSubstituteFor("mysql");
     } else {
-      imageName = "mysql:5.7.27";
+      imageName = DockerImageName.parse("mysql:5.7.27");
     }
 
-    mySQLContainer = new MySQLContainer<>(DockerImageName.parse(imageName))
+    mySQLContainer = new MySQLContainer<>(imageName)
             .withExposedPorts(3306)
             .withConfigurationOverride("mysql_config_override")
             .withUsername("mysqlUser")
